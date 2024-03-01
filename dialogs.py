@@ -7,7 +7,7 @@ from aiogram_dialog.widgets.text import Const
 
 import config
 from states import MainSG
-from tools import plot_service
+from tools.plot import plot_service
 
 
 async def check_passwd(msg: Message, msg_inpt, manager: DialogManager):
@@ -32,7 +32,7 @@ main_dialog = Dialog(
         ),
         Button(
             Const('Архив изменений'),
-            id = 'archive_levels',
+            id='archive_levels',
             on_click=plot_service.show_archive_levels
         ),
         state=MainSG.main

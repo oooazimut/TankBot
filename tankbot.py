@@ -10,8 +10,6 @@ import config
 import dialogs
 import routers
 
-_logger = logging.getLogger()
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 
 async def main():

@@ -1,10 +1,26 @@
+import datetime
+
+from db.schema import DB_NAME, CREATE_SCRIPT
 from db.models import DataBase
+from db.models import SqLiteDataBase
+
+database = SqLiteDataBase(DB_NAME, CREATE_SCRIPT)
 
 
 class UserService:
-    def __init__(self, database: DataBase):
-        self.db = database
+    db: DataBase = database
 
-    def get_user_by_id(self, userid):
+    @classmethod
+    def get_user_by_id(cls, userid):
         query = 'SELECT * FROM users WHERE id = ?'
-        return self.db.select_query(query, [userid])
+        return cls.db.select_query(query, [userid])
+
+
+class LosService:
+    db: DataBase = database
+
+    @classmethod
+    def write_level(cls, level):
+        moment = datetime.datetime.now().replace(microsecond=0)
+        query = 'INSERT INTO levels(timestamp, level) VALUES (?, ?)'
+        cls.db.post_query(query, [moment, level])

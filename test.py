@@ -1,19 +1,17 @@
 import asyncio
 
-from tools import mb_client
+from tools.modbus import ModbusService as Mbs
 
 
-async def client_test():
-    await mb_client.connect()
-
-    if mb_client.connected:
-        await mb_client.write_register(address=515, value=8, slave=16)
-        rr = await mb_client.read_holding_registers(address=515, slave=16)
-        if not rr.isError():
-            print(rr.registers)
-        else:
-            print(rr)
-    mb_client.close()
+async def main():
+    await Mbs.client.connect()
+    if Mbs.client.connected:
+        value = float(input('введи число: \n'))
+        await Mbs.write_float(516, value)
+        result = await Mbs.read_float(516)
+        print(result)
+    Mbs.client.close()
 
 
-asyncio.run(client_test())
+if __name__ == '__main__':
+    asyncio.run(main())
