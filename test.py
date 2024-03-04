@@ -1,17 +1,10 @@
-import asyncio
+import datetime
 
-from tools.modbus import ModbusService as Mbs
+from db.service import UserService, LosService
 
+print(UserService.get_users())
+print(LosService.get_last_level())
 
-async def main():
-    await Mbs.client.connect()
-    if Mbs.client.connected:
-        value = float(input('введи число: \n'))
-        await Mbs.write_float(516, value)
-        result = await Mbs.read_float(516)
-        print(result)
-    Mbs.client.close()
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
+moment = datetime.datetime.now().replace(second=0)
+print(moment)
+LosService.db.post_query('delete from levels')

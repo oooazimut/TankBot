@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 
 from pymodbus.exceptions import ConnectionException, ModbusIOException
 
@@ -16,6 +17,7 @@ def pr_connector(func):
             if MbSrv.client.connected:
                 _logger.info('### ПР на связи.')
                 await func()
+            MbSrv.client.close()
             await asyncio.sleep(15)
 
     return wrapper
@@ -30,11 +32,14 @@ async def regs_polling():
                 LosService.write_level(data)
             else:
                 _logger.error(f'Ошибка чтения: {data}')
-        except ConnectionException:
-            _logger.error('Ошибка соединения')
-            break
         except ModbusIOException:
             _logger.error('Нет ответа от ПР')
+            MbSrv.client.close()
+            break
+        except ConnectionException:
+            _logger.error('Ошибка соединения')
+            MbSrv.client.close()
+            break
 
         await asyncio.sleep(15)
 
