@@ -24,7 +24,7 @@ async def on_current_level(callback: CallbackQuery, button: Button, manager: Dia
         last_level = last_level[0]
         curr_time = datetime.datetime.now().replace(second=0, microsecond=0)
         if last_level['timestamp'].replace(second=0) == curr_time:
-            PlotService.current_level()
+            PlotService.current_level(last_level['level'])
             await manager.switch_to(MainSG.curr_level)
         else:
             await callback.answer('Данные устарели.')

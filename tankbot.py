@@ -8,6 +8,7 @@ from redis.asyncio import Redis
 import config
 import dialogs
 import routers
+from custom.media_storage import MediaIdStorage
 from functions import regs_polling
 
 
@@ -20,7 +21,7 @@ async def main():
     dp = Dispatcher(storage=storage)
     dp.startup.register(on_startup)
     dp.include_routers(routers.start_router, dialogs.main_dialog)
-    setup_dialogs(dp)
+    setup_dialogs(dp, media_id_storage=MediaIdStorage())
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 

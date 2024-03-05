@@ -2,10 +2,11 @@ from aiogram.enums import ContentType
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, SwitchTo
+from aiogram_dialog.widgets.media import StaticMedia
 from aiogram_dialog.widgets.text import Const
 
 import handlers
-from babel_calendar import CustomCalendar
+from custom.babel_calendar import CustomCalendar
 from states import MainSG
 
 main_dialog = Dialog(
@@ -31,7 +32,8 @@ main_dialog = Dialog(
     Window(
         Const('Текущий уровень:'),
         SwitchTo(Const('Назад'), id='to_main', state=MainSG.main),
-        state=MainSG.curr_level
+        StaticMedia(path='curr_level.png', type=ContentType.PHOTO),
+        state=MainSG.curr_level,
     ),
     Window(
         Const('Выберите дату:'),

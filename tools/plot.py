@@ -1,10 +1,59 @@
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.lines import Line2D
+from matplotlib.patches import Polygon, Rectangle
+
+
 class PlotService:
-    @classmethod
-    def current_level(self):
-        pass
+    low_border = 4
+    high_border = 20.2
 
     @classmethod
-    def archive_levels(self):
+    def current_level(cls, level: float):
+        def draw_tank(axs: Axes):
+            coordinates = np.array([
+                (1, cls.low_border),
+                (1, cls.high_border),
+                (2, cls.high_border),
+                (2, 21),
+                (5, 21),
+                (5, cls.high_border),
+                (11, cls.high_border),
+                (11, cls.low_border)])
+            tank = Polygon(coordinates, fill=False, closed=True)
+            axs.add_patch(tank)
+
+        def draw_pump_level(axs: Axes):
+            line = Line2D([9, 11], [10, 10], color='black')
+            axs.add_line(line)
+            plt.text(11.5, 10, 'критический \n уровень 1')
+
+        def draw_critical_level(axs: Axes):
+            line = Line2D([9, 11], [19, 19], color='red')
+            axs.add_line(line)
+            plt.text(11.5, 19, 'критический \n уровень 2')
+
+        def draw_liquid(axs: Axes, lvl: float = level):
+            start_point = (1, cls.low_border)
+            width = 10
+            height = lvl - cls.low_border
+            liquid = Rectangle(start_point, width, height)
+            axs.add_patch(liquid)
+
+        plt.clf()
+        axes = plt.gca()
+        axes.set_aspect('equal')
+        draw_tank(axes)
+        draw_liquid(axes)
+        draw_critical_level(axes)
+        draw_pump_level(axes)
+        axes.set_xlim(0, 17)
+        axes.set_ylim(3, 22)
+        axes.set_xticks([])
+        axes.set_yticks([])
+        plt.savefig('curr_level.png')
+
+    @classmethod
+    def archive_levels(cls):
         pass
-
-

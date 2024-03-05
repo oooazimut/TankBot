@@ -163,4 +163,4 @@ cython_debug/
 #.idea/
 test*.py
 config.py
-Support.db
+curr_level.png
