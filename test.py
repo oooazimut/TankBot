@@ -3,10 +3,11 @@ import asyncio
 from tools.modbus import ModbusService
 
 
-async def write_level():
+async def test():
     await ModbusService.client.connect()
-    await ModbusService.write_float(516, 4)
-    data = await ModbusService.read_float(516)
-    print(data)
+    data = await ModbusService.client.read_holding_registers(512, 3, 16)
+    if not data.isError():
+        print(data.registers[:2])
 
-asyncio.run(write_level())
+
+asyncio.run(test())

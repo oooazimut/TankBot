@@ -30,9 +30,9 @@ main_dialog = Dialog(
         state=MainSG.main
     ),
     Window(
-        Const('Текущий уровень:'),
+        # Const('Текущий уровень:'),
+        StaticMedia(path='media/curr_level.png', type=ContentType.PHOTO),
         SwitchTo(Const('Назад'), id='to_main', state=MainSG.main),
-        StaticMedia(path='curr_level.png', type=ContentType.PHOTO),
         state=MainSG.curr_level,
     ),
     Window(
@@ -40,5 +40,10 @@ main_dialog = Dialog(
         CustomCalendar(id='cal', on_click=handlers.on_date_clicked),
         SwitchTo(Const('Назад'), id='to_main', state=MainSG.main),
         state=MainSG.calendar
+    ),
+    Window(
+        StaticMedia(path='media/l_history.png', type=ContentType.PHOTO),
+        SwitchTo(Const('Назад'), id='to_main', state=MainSG.main),
+        state=MainSG.archive
     )
 )

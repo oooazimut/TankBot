@@ -18,7 +18,7 @@ class UserService:
     @classmethod
     def get_users(cls):
         query = 'SELECT * FROM users'
-        return cls.db.select_query(query)
+        return cls.db.select_query(query, [])
 
     @classmethod
     def add_user(cls, userid, username):
@@ -38,4 +38,14 @@ class LosService:
     @classmethod
     def get_last_level(cls):
         query = 'SELECT * FROM levels ORDER BY id DESC LIMIT 1'
-        return cls.db.select_query(query)
+        return cls.db.select_query(query, [])
+
+    @classmethod
+    def get_first_item(cls):
+        query = 'SELECT * FROM levels ORDER BY id LIMIT 1'
+        return cls.db.select_query(query, [])
+
+    @classmethod
+    def get_levels(cls, date: datetime.date):
+        query = 'SELECT * FROM levels WHERE DATE(timestamp) = ?'
+        return cls.db.select_query(query, [date])

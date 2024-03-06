@@ -1,11 +1,10 @@
 import asyncio
-import datetime
 
 from pymodbus.exceptions import ConnectionException, ModbusIOException
 
 from config import _logger
-from tools.modbus import ModbusService as MbSrv
 from db.service import LosService
+from tools.modbus import ModbusService as MbSrv
 
 
 def pr_connector(func):
@@ -27,9 +26,13 @@ def pr_connector(func):
 async def regs_polling():
     while True:
         try:
-            data = await MbSrv.read_float(516)
-            if isinstance(data, float):
-                LosService.write_level(data)
+            data = await MbSrv.client.read_holding_registers(512, 3, 16)
+            if not data.isError():
+                level = MbSrv.convert_to_float(data.registers[:2])
+                LosService.write_level(level)
+                bits = bin(data.registers[2])[2:].zfill(2)
+                print(bits, type(bits))
+                overflow, failure = bits[1], bits[0]
             else:
                 _logger.error(f'Ошибка чтения: {data}')
         except ModbusIOException:

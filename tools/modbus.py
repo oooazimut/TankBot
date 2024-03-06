@@ -25,10 +25,7 @@ class ModbusService:
         await cls.client.write_registers(address=register, values=payload, slave=16, skip_encode=True)
 
     @classmethod
-    async def read_float(cls, register):
-        data = await cls.client.read_holding_registers(register, 2, 16)
-        result = data
-        if not data.isError():
-            decoder = BinaryPayloadDecoder.fromRegisters(data.registers, byteorder=Endian.BIG, wordorder=Endian.LITTLE)
-            result = decoder.decode_32bit_float()
+    def convert_to_float(cls, registers: list):
+        decoder = BinaryPayloadDecoder.fromRegisters(registers, byteorder=Endian.BIG, wordorder=Endian.LITTLE)
+        result = decoder.decode_32bit_float()
         return result
