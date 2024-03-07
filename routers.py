@@ -3,7 +3,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram_dialog import DialogManager, StartMode
 
-from db.service import UserService as UsSrv
+from db.repo import UserRepo as UsSrv
 from states import MainSG
 
 start_router = Router()

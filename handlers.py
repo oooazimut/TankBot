@@ -5,21 +5,21 @@ from aiogram_dialog import DialogManager, ChatEvent
 from aiogram_dialog.widgets.kbd import Button, ManagedCalendar
 
 import config
-from db.service import UserService, LosService
+from db.repo import UserRepo, LosRepo
 from states import MainSG
-from tools.plot import PlotService
+from service.plot import PlotService
 
 
 async def check_passwd(msg: Message, msg_inpt, manager: DialogManager):
     if msg.text == config.PASSWD:
-        UserService.add_user(msg.from_user.id, msg.from_user.full_name)
+        UserRepo.add_user(msg.from_user.id, msg.from_user.full_name)
         await manager.next()
     else:
         await msg.answer('Неверно, попробуйте ещё раз')
 
 
 async def on_current_level(callback: CallbackQuery, button: Button, manager: DialogManager):
-    last_level = LosService.get_last_level()
+    last_level = LosRepo.get_last_level()
     if last_level:
         last_level = last_level[0]
         curr_time = datetime.datetime.now()
@@ -41,7 +41,7 @@ async def on_date_clicked(
         widget: ManagedCalendar,
         manager: DialogManager,
         clicked_date: datetime.date, /):
-    data = LosService.get_levels(clicked_date)
+    data = LosRepo.get_levels(clicked_date)
     if data:
         PlotService.archive_levels(data)
         await manager.switch_to(MainSG.archive)

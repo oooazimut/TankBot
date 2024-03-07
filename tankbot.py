@@ -9,11 +9,12 @@ import config
 import dialogs
 import routers
 from custom.media_storage import MediaIdStorage
-from functions import regs_polling
+from service.polling import Polling
 
 
-async def on_startup():
-    asyncio.create_task(regs_polling())
+async def on_startup(bot: Bot, **kwargs):
+    asyncio.create_task(Polling.regs_polling(bot))
+
 
 async def main():
     bot = Bot(config.TOKEN)

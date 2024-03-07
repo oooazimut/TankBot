@@ -7,7 +7,7 @@ from db.models import SqLiteDataBase
 database = SqLiteDataBase(DB_NAME, CREATE_SCRIPT)
 
 
-class UserService:
+class UserRepo:
     db: DataBase = database
 
     @classmethod
@@ -26,7 +26,7 @@ class UserService:
         cls.db.post_query(query, [userid, username])
 
 
-class LosService:
+class LosRepo:
     db: DataBase = database
 
     @classmethod

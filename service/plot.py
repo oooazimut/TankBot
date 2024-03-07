@@ -4,43 +4,39 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon, Rectangle
+from config import TankVars
 
 
 class PlotService:
-    low_border = 4
-    high_border = 20.2
-    warning = 10
-    critical = 19
-
     @classmethod
     def current_level(cls, level: float):
         def draw_tank(axs: Axes):
             coordinates = np.array([
-                (1, cls.low_border),
-                (1, cls.high_border),
-                (2, cls.high_border),
+                (1, TankVars.low_border),
+                (1, TankVars.high_border),
+                (2, TankVars.high_border),
                 (2, 21),
                 (5, 21),
-                (5, cls.high_border),
-                (11, cls.high_border),
-                (11, cls.low_border)])
+                (5, TankVars.high_border),
+                (11, TankVars.high_border),
+                (11, TankVars.low_border)])
             tank = Polygon(coordinates, fill=False, closed=True)
             axs.add_patch(tank)
 
         def draw_pump_level(axs: Axes):
-            line = Line2D([9, 11], [cls.warning, cls.warning], color='yellow')
+            line = Line2D([9, 11], [TankVars.warning, TankVars.warning], color='yellow')
             axs.add_line(line)
-            plt.text(11.5, cls.warning, 'критический \n уровень 1')
+            plt.text(11.5, TankVars.warning, 'критический \n уровень 1')
 
         def draw_critical_level(axs: Axes):
-            line = Line2D([9, 11], [cls.critical, cls.critical], color='red')
+            line = Line2D([9, 11], [TankVars.critical, TankVars.critical], color='red')
             axs.add_line(line)
-            plt.text(11.5, cls.critical, 'критический \n уровень 2')
+            plt.text(11.5, TankVars.critical, 'критический \n уровень 2')
 
         def draw_liquid(axs: Axes, lvl: float = level):
-            start_point = (1.1, cls.low_border+0.1)
+            start_point = (1.1, TankVars.low_border+0.1)
             width = 9.8
-            height = lvl - cls.low_border
+            height = lvl - TankVars.low_border
             liquid = Rectangle(start_point, width, height, color='skyblue')
             axs.add_patch(liquid)
 
@@ -68,8 +64,8 @@ class PlotService:
         plt.clf()
         plt.gca().xaxis.set_major_formatter(date_format)
         plt.plot(x_vals, y_vals)
-        plt.plot(x_vals, [cls.warning] * len(x_vals), color='yellow', label='крит.ур.1')
-        plt.plot(x_vals, [cls.critical] * len(x_vals), color='red', label='крит.ур.2')
+        plt.plot(x_vals, [TankVars.warning] * len(x_vals), color='yellow', label='крит.ур.1')
+        plt.plot(x_vals, [TankVars.critical] * len(x_vals), color='red', label='крит.ур.2')
         plt.fill_between(x_vals, y_vals, color='skyblue')
         plt.title(f"Изменение уровня за {day}")
         plt.xlabel("Время")
