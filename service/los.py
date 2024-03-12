@@ -1,6 +1,8 @@
 import datetime
 
 from aiogram import Bot
+from apscheduler.jobstores.base import JobLookupError
+from apscheduler.schedulers import SchedulerAlreadyRunningError
 from pymodbus import ModbusException, ExceptionResponse
 
 from config import TankVars, _logger
@@ -12,42 +14,49 @@ from service.modbus import ModbusService
 class LosService:
 
     @staticmethod
-    def check_level(level: float) -> str | None:
+    def check_level(level: float, prev_level: float, bot: Bot) -> None:
         from tankbot import scheduler
-        prev_level = LosRepo.get_last_level()[0]['level']
-        print(level, prev_level)
-        if not (4 <= prev_level < TankVars.warning):
-            if 4 <= level < TankVars.warning:
-                scheduler.remove_job('informer')
-                print('рассылка отключена')
-            return
-        if 20 < level < 4:
-            return 'Авария датчика уровня!'
-        elif level > TankVars.critical:
-            return 'Второй критический уровень, ёмкость скоро переполнится!'
-        elif level > TankVars.warning:
-            return 'Первый критический уровень, необходимо проверить работу насоса!'
-
-        return
+        txt = ''
+        match prev_level, level:
+            case p, c if (TankVars.low_border <= p <= TankVars.high_border) and (
+                          c < TankVars.low_border or c > TankVars.high_border):
+                txt = 'Авария датчика уровня!'
+            case p, c if p <= TankVars.warning < c:
+                txt = 'Первый критический уровень, необходимо проверить работу насоса!'
+            case p, c if p <= TankVars.critical < c:
+                txt = 'Второй критический уровень, ёмкость скоро переполнится!'
+            case p, c if (p < TankVars.low_border or p > TankVars.warning) and (
+                        TankVars.low_border <= c <= TankVars.warning):
+                try:
+                    scheduler.remove_job('alarm')
+                except JobLookupError:
+                    pass
+        if txt:
+            job = scheduler.get_job('alarm')
+            if job:
+                job.modify(kwargs={'message': txt, 'users': UserRepo.get_users(), 'bot': bot})
+            else:
+                try:
+                    scheduler.add_job(
+                        func=Mailing.send_message,
+                        trigger='interval',
+                        seconds=10,
+                        next_run_time=datetime.datetime.now(),
+                        id='alarm',
+                        kwargs={'message': txt, 'users': UserRepo.get_users(), 'bot': bot}
+                    )
+                    scheduler.start()
+                except SchedulerAlreadyRunningError:
+                    pass
 
     @classmethod
     async def poll_registers(cls, bot: Bot):
-        from tankbot import scheduler
         await ModbusService.client.connect()
         try:
             data = await ModbusService.client.read_holding_registers(512, 3, 16)
             level = ModbusService.convert_to_float(data.registers[:2])
-            notification = cls.check_level(level)
-            print(notification)
-            if notification:
-                print(notification)
-                scheduler.add_job(
-                    func=Mailing.send_message,
-                    trigger='interval',
-                    seconds=10,
-                    next_run_time=datetime.datetime.now(),
-                    id='informer',
-                    kwargs={'message': notification, 'users': UserRepo.get_users(), 'bot': bot})
+            prev_level = LosRepo.get_last_level()[0]['level']
+            cls.check_level(level, prev_level, bot)
             LosRepo.write_level(level)
         except ModbusException as exc:
             _logger.error(f'1 {exc}')

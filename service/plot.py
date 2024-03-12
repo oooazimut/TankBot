@@ -10,15 +10,16 @@ from config import TankVars
 class PlotService:
     @classmethod
     def current_level(cls, level: float):
+        high_border = TankVars.high_border + 0.2
         def draw_tank(axs: Axes):
             coordinates = np.array([
                 (1, TankVars.low_border),
-                (1, TankVars.high_border),
-                (2, TankVars.high_border),
+                (1, high_border),
+                (2, high_border),
                 (2, 21),
                 (5, 21),
-                (5, TankVars.high_border),
-                (11, TankVars.high_border),
+                (5, high_border),
+                (11, high_border),
                 (11, TankVars.low_border)])
             tank = Polygon(coordinates, fill=False, closed=True)
             axs.add_patch(tank)
@@ -43,8 +44,8 @@ class PlotService:
         plt.clf()
         axes = plt.gca()
         axes.set_aspect('equal')
-        draw_tank(axes)
         draw_liquid(axes)
+        draw_tank(axes)
         draw_critical_level(axes)
         draw_pump_level(axes)
         axes.set_xlim(0, 17)
@@ -58,7 +59,6 @@ class PlotService:
     def archive_levels(cls, data: list):
         x_vals = [i['timestamp'] for i in data]
         day = x_vals[0].date()
-        print(day, type(day))
         y_vals = [i['level'] for i in data]
         date_format = mdates.DateFormatter('%H:%M')
         plt.clf()

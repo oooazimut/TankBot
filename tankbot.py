@@ -13,7 +13,7 @@ import routers
 from custom.media_storage import MediaIdStorage
 from service.los import LosService
 
-logging.getLogger('apscheduler').setLevel(logging.ERROR)
+# logging.getLogger('apscheduler').setLevel(logging.ERROR)
 scheduler = AsyncIOScheduler()
 
 
