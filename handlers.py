@@ -22,6 +22,9 @@ async def on_current_level(callback: CallbackQuery, button: Button, manager: Dia
     last_level = LosRepo.get_last_level()
     if last_level:
         last_level = last_level[0]
+        if last_level['level'] < config.TankVars.low_border or last_level['level'] > config.TankVars.high_border:
+            await callback.answer('Датчик неисправен!', show_alert=True)
+            return
         curr_time = datetime.datetime.now()
         if last_level['timestamp'] >= curr_time - datetime.timedelta(minutes=2):
             PlotService.current_level(last_level['level'])

@@ -1,8 +1,8 @@
 import datetime
+from dataclasses import dataclass
 
 from aiogram import Bot
-from apscheduler.jobstores.base import JobLookupError
-from apscheduler.schedulers import SchedulerAlreadyRunningError
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pymodbus import ModbusException, ExceptionResponse
 
 from config import TankVars, _logger
@@ -11,52 +11,93 @@ from service.mailing import Mailing
 from service.modbus import ModbusService
 
 
+@dataclass
+class Messages:
+    SENSOR_FAILURE = 'Авария датчика уровня!'
+    FIRST_CRIT_LEVEL = 'Первый критический уровень, необходимо проверить работу насоса!'
+    SECOND_CRIT_LEVEL = 'Второй критический уровень, ёмкость скоро переполнится!'
+
+
 class LosService:
+    @staticmethod
+    def is_warning(level) -> bool:
+        return TankVars.warning < level <= TankVars.critical
 
     @staticmethod
-    def check_level(level: float, prev_level: float, bot: Bot) -> None:
-        from tankbot import scheduler
+    def is_critical(level) -> bool:
+        return TankVars.critical < level <= TankVars.high_border
+
+    @staticmethod
+    def is_failure(level) -> bool:
+        return any([level < TankVars.low_border, level > TankVars.high_border])
+
+    @staticmethod
+    def is_normal(level) -> bool:
+        return TankVars.low_border <= level <= TankVars.warning
+
+    @classmethod
+    def check_alarm(cls, bot: Bot, scheduler: AsyncIOScheduler):
+        job = scheduler.get_job('alarm')
+        if not job:
+            level = LosRepo.get_last_level()
+            txt = ''
+            match level:
+                case l if cls.is_failure(l):
+                    txt = Messages.SENSOR_FAILURE
+                case l if cls.is_warning(l):
+                    txt = Messages.FIRST_CRIT_LEVEL
+                case l if cls.is_critical(l):
+                    txt = Messages.SECOND_CRIT_LEVEL
+
+            if txt:
+                scheduler.add_job(
+                    func=Mailing.send_message,
+                    trigger='interval',
+                    hours=1,
+                    next_run_time=datetime.datetime.now(),
+                    id='alarm',
+                    kwargs={'message': txt, 'users': UserRepo.get_users(), 'bot': bot}
+                )
+
+    @classmethod
+    def check_level(cls, level: float, prev_level: float, bot: Bot, scheduler: AsyncIOScheduler) -> None:
         txt = ''
         match prev_level, level:
-            case p, c if (TankVars.low_border <= p <= TankVars.high_border) and (
-                          c < TankVars.low_border or c > TankVars.high_border):
-                txt = 'Авария датчика уровня!'
-            case p, c if p <= TankVars.warning < c:
-                txt = 'Первый критический уровень, необходимо проверить работу насоса!'
-            case p, c if p <= TankVars.critical < c:
-                txt = 'Второй критический уровень, ёмкость скоро переполнится!'
-            case p, c if (p < TankVars.low_border or p > TankVars.warning) and (
-                        TankVars.low_border <= c <= TankVars.warning):
-                try:
-                    scheduler.remove_job('alarm')
-                except JobLookupError:
-                    pass
+            case p, c if not cls.is_failure(p) and cls.is_failure(c):
+                txt = Messages.SENSOR_FAILURE
+            case p, c if not cls.is_warning(p) and cls.is_warning(c):
+                txt = Messages.FIRST_CRIT_LEVEL
+            case p, c if not cls.is_critical(p) and cls.is_critical(c):
+                txt = Messages.SECOND_CRIT_LEVEL
+            case p, c if not cls.is_normal(p) and cls.is_normal(c):
+                job = scheduler.get_job('alarm')
+                if job:
+                    job.remove()
         if txt:
             job = scheduler.get_job('alarm')
             if job:
-                job.modify(kwargs={'message': txt, 'users': UserRepo.get_users(), 'bot': bot})
+                job.modify(
+                    next_run_time=datetime.datetime.now(),
+                    kwargs={'message': txt, 'users': UserRepo.get_users(), 'bot': bot}
+                )
             else:
-                try:
-                    scheduler.add_job(
-                        func=Mailing.send_message,
-                        trigger='interval',
-                        seconds=10,
-                        next_run_time=datetime.datetime.now(),
-                        id='alarm',
-                        kwargs={'message': txt, 'users': UserRepo.get_users(), 'bot': bot}
-                    )
-                    scheduler.start()
-                except SchedulerAlreadyRunningError:
-                    pass
+                scheduler.add_job(
+                    func=Mailing.send_message,
+                    trigger='interval',
+                    hours=1,
+                    next_run_time=datetime.datetime.now(),
+                    id='alarm',
+                    kwargs={'message': txt, 'users': UserRepo.get_users(), 'bot': bot}
+                )
 
     @classmethod
-    async def poll_registers(cls, bot: Bot):
+    async def poll_registers(cls, bot: Bot, scheduler: AsyncIOScheduler):
         await ModbusService.client.connect()
         try:
             data = await ModbusService.client.read_holding_registers(512, 3, 16)
             level = ModbusService.convert_to_float(data.registers[:2])
             prev_level = LosRepo.get_last_level()[0]['level']
-            cls.check_level(level, prev_level, bot)
+            cls.check_level(level, prev_level, bot, scheduler)
             LosRepo.write_level(level)
         except ModbusException as exc:
             _logger.error(f'1 {exc}')

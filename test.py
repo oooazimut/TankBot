@@ -5,7 +5,7 @@ from service.modbus import ModbusService
 
 async def test():
     await ModbusService.client.connect()
-    await ModbusService.write_float(515, 18)
+    await ModbusService.write_float(515, 40)
     ModbusService.client.close()
 
 
