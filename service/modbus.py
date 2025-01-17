@@ -3,13 +3,13 @@ from pymodbus.constants import Endian
 from pymodbus.framer.rtu_framer import ModbusRtuFramer
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 
-from config import NET_DATA
+from config import settings
 
 framer = ModbusRtuFramer
 
 mb_client = AsyncModbusTcpClient(
-    host=NET_DATA.localhost,
-    port=NET_DATA.localport,
+    host=settings.modbus.host,
+    port=settings.modbus.port,
     framer=framer
 )
 

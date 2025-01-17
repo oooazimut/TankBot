@@ -1,40 +1,36 @@
-from abc import ABC, abstractmethod
-import sqlite3 as sq
+from datetime import datetime
+from typing import Annotated
+
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-
-class DataBase(ABC):
-    @abstractmethod
-    def select_query(self, query, params):
-        pass
-
-    @abstractmethod
-    def post_query(self, query, params):
-        pass
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
 
 
-class SqLiteDataBase(DataBase):
-    def __init__(self, name, create_script):
-        self.name = name
-        with sq.connect(self.name) as con:
-            con.executescript(create_script)
+dttm = Annotated[datetime, mapped_column(default=datetime.now)]
+classic_id = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]
 
-    def select_query(self, query, params=None) -> list[dict]:
-        if params is None:
-            params = []
-        with sq.connect(self.name, detect_types=sq.PARSE_COLNAMES | sq.PARSE_DECLTYPES) as con:
-            con.row_factory = sq.Row
-            temp = con.execute(query, params).fetchall()
-            result = []
-            if temp:
-                for i in temp:
-                    item = dict(zip(i.keys(), tuple(i)))
-                    result.append(item)
-            return result
 
-    def post_query(self, query: str, params=None) -> None:
-        if params is None:
-            params = []
-        with sq.connect(self.name, detect_types=sq.PARSE_COLNAMES | sq.PARSE_DECLTYPES) as con:
-            con.execute(query, params)
-            con.commit()
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str]
+
+    def __repr__(self) -> str:
+        return f"User(id={self.id!r}, name={self.username!r})"
+
+
+class Level(Base):
+    __tablename__ = "levels"
+
+    id: Mapped[classic_id]
+    level: Mapped[float]
+    timestamp: Mapped[dttm]
+
+    def __repr__(self) -> str:
+        return (
+            f"Level(id={self.id!r}, level={self.level!r}, timestamp={self.timestamp!r})"
+        )

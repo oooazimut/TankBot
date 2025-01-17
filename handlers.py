@@ -1,17 +1,16 @@
 import datetime
 
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import DialogManager, ChatEvent
+from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button, ManagedCalendar
-
-import config
-from db.repo import UserRepo, LosRepo
-from states import MainSG
+from config import settings
+from db.repo import LosRepo, UserRepo
 from service.plot import PlotService
+from states import MainSG
 
 
 async def check_passwd(msg: Message, msg_inpt, manager: DialogManager):
-    if msg.text == config.PASSWD:
+    if msg.text == settings.passwd.get_secret_value():
         UserRepo.add_user(msg.from_user.id, msg.from_user.full_name)
         await manager.next()
     else:
@@ -22,7 +21,7 @@ async def on_current_level(callback: CallbackQuery, button: Button, manager: Dia
     last_level = LosRepo.get_last_level()
     if last_level:
         last_level = last_level[0]
-        if last_level['level'] < config.TankVars.low_border or last_level['level'] > config.TankVars.high_border:
+        if last_level['level'] < settings.tank.low_border or last_level['level'] > settings.tank.high_border:
             await callback.answer('Датчик неисправен!', show_alert=True)
             return
         curr_time = datetime.datetime.now()
@@ -40,7 +39,7 @@ async def on_archive_levels(callback: CallbackQuery, button: Button, manager: Di
 
 
 async def on_date_clicked(
-        callback: ChatEvent,
+        callback: CallbackQuery,
         widget: ManagedCalendar,
         manager: DialogManager,
         clicked_date: datetime.date, /):

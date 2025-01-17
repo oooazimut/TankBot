@@ -2,14 +2,16 @@ import datetime
 from enum import StrEnum
 
 from aiogram import Bot
+from apscheduler.executors.base import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pymodbus import ModbusException, ExceptionResponse
 
-from config import TankVars, _logger
+from config import settings 
 from db.repo import LosRepo, UserRepo
 from service.mailing import send_message
 from service.modbus import ModbusService
 
+logger = logging.getLogger(__name__)
 
 class Messages(StrEnum):
     SENSOR_FAILURE = 'Авария датчика уровня!'
@@ -23,16 +25,16 @@ class Messages(StrEnum):
 
 
 def is_warning(level) -> bool:
-    return TankVars.warning < level <= TankVars.critical
+    return settings.tank.warning < level <= settings.tank.critical
 
 def is_critical(level) -> bool:
-    return TankVars.critical < level <= TankVars.high_border
+    return settings.tank.critical < level <= settings.tank.high_border
 
 def is_failure(level) -> bool:
-    return any([level < TankVars.low_border, level > TankVars.high_border])
+    return any([level < settings.tank.low_border, level > settings.tank.high_border])
 
 def is_normal(level) -> bool:
-    return TankVars.low_border <= level <= TankVars.warning
+    return settings.tank.low_border <= level <= settings.tank.warning
 
 async def check_alarm(bot: Bot, scheduler: AsyncIOScheduler):
     level = LosRepo.get_last_level()
@@ -96,14 +98,14 @@ async def poll_registers(cls, bot: Bot, scheduler: AsyncIOScheduler):
             case 2: 
                 pass
     except ModbusException as exc:
-        _logger.error(f'1 {exc}')
+        logger.error(f'1 {exc}')
         ModbusService.client.close()
         return
     if data.isError():
-        _logger.error(data)
+        logger.error(data)
         ModbusService.client.close()
         return
     if isinstance(data, ExceptionResponse):
-        _logger.error(f' 2 {data}')
+        logger.error(f' 2 {data}')
         ModbusService.client.close()
     ModbusService.client.close()
