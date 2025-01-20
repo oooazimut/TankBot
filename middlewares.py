@@ -4,15 +4,31 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
 
-class DataMiddleware(BaseMiddleware):
-    def __init__(self, some_data: dict):
-        self.some_data = some_data
+class DBSessionMiddleware(BaseMiddleware):
+    def __init__(self, session_pool) -> None:
+        super().__init__()
+        self.session_pool = session_pool
 
     async def __call__(
-            self,
-            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-            event: TelegramObject,
-            data: Dict[str, Any],
+        self,
+        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: Dict[str, Any],
     ) -> Any:
-        data.update(self.some_data)
+        async with self.session_pool() as session:
+            data["session"] = session
+            return await handler(event, data)
+
+
+class APSchedulerMiddleware(BaseMiddleware):
+    def __init__(self, scheduler) -> None:
+        self.scheduler = scheduler
+
+    async def __call__(
+        self,
+        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: Dict[str, Any],
+    ) -> Any:
+        data["scheduler"] = self.scheduler
         return await handler(event, data)

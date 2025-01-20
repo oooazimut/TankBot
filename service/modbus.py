@@ -1,31 +1,54 @@
-from pymodbus.client import AsyncModbusTcpClient, ModbusBaseClient
-from pymodbus.constants import Endian
-from pymodbus.framer.rtu_framer import ModbusRtuFramer
-from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
-
+from apscheduler.executors.base import logging
 from config import settings
+from pymodbus.client import AsyncModbusTcpClient, ModbusBaseClient
+from pymodbus.exceptions import ModbusException
 
-framer = ModbusRtuFramer
-
-mb_client = AsyncModbusTcpClient(
-    host=settings.modbus.host,
-    port=settings.modbus.port,
-    framer=framer
-)
+logger = logging.getLogger(__name__)
 
 
-class ModbusService:
-    client: ModbusBaseClient = mb_client
-    builder = BinaryPayloadBuilder(byteorder=Endian.BIG, wordorder=Endian.LITTLE)
+def process_data(client: ModbusBaseClient, data: list):
+    result = dict()
+    level = data[:2]
+    level.reverse()
+    result["level"] = client.convert_from_registers(
+        level,
+        data_type=client.DATATYPE.FLOAT32,
+    )
+    result["accidents"] = data[-1]
 
-    @classmethod
-    async def write_float(cls, register, value):
-        cls.builder.add_32bit_float(value)
-        payload = cls.builder.build()
-        await cls.client.write_registers(address=register, values=payload, slave=16, skip_encode=True)
+    return result
 
-    @classmethod
-    def convert_to_float(cls, registers: list):
-        decoder = BinaryPayloadDecoder.fromRegisters(registers, byteorder=Endian.BIG, wordorder=Endian.LITTLE)
-        result = decoder.decode_32bit_float()
-        return result
+
+async def create_modbus_client():
+    return AsyncModbusTcpClient(
+        settings.modbus.host,
+        port=settings.modbus.port,
+        timeout=3,
+        retries=1,
+        reconnect_delay=0.5,
+        reconnect_delay_max=0.5,
+    )
+
+
+async def poll_registers(address, count) -> dict | None:
+    try:
+        async with await create_modbus_client() as client:
+            if not client.connected:
+                logger.error("Нет соединения с ПР")
+                return
+
+            try:
+                data = await client.read_holding_registers(
+                    address, count=count, slave=16
+                )
+                if data.isError():
+                    logger.error(f"Чтение регистров завершилось ошибкой: {data}")
+                    return
+                return process_data(client, data.registers)
+            except ModbusException as exc:
+                logger.error(f"Ошибка протокола Modbus: {exc}")
+                return
+
+    except Exception as e:
+        logger.error(f"Общая ошибка при подключении: {e}")
+        return

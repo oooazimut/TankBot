@@ -1,10 +1,11 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, InaccessibleMessage, Message
 from aiogram_dialog import DialogManager, StartMode
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.asyncio import asyncio
 
-from db.repo import UserRepo as UsSrv
+from db.repo import users
+from service.modbus import create_modbus_client
 from states import MainSG
 
 start_router = Router()
@@ -13,19 +14,22 @@ start_router = Router()
 @start_router.message(CommandStart())
 async def start_nandler(msg: Message, dialog_manager: DialogManager):
     start_state = MainSG.passw
-    user = UsSrv.get_user_by_id(msg.from_user.id)
+    user = users.get_one(
+        dialog_manager.middleware_data["session"],
+        msg.from_user.id,
+    )
     if user:
         start_state = MainSG.main
     await dialog_manager.start(state=start_state, mode=StartMode.RESET_STACK)
 
 
-@start_router.callback_query(F.data == 'reset_warning')
-async def reset_warning(clb: CallbackQuery, scheduler: AsyncIOScheduler):
-    job = scheduler.get_job('alarm')
-    if job:
-        job.remove()
-        await clb.answer('Предупреждение сброшено', show_alert=True)
-        await clb.message.delete()
-    else:
-        await clb.answer('Показания в норме, сброс не требуется.')
-        await clb.message.delete()
+@start_router.callback_query(F.data == "reset_warning")
+async def reset_warning(clb: CallbackQuery):
+    async with await create_modbus_client() as client:
+        await client.write_register(555, 1)
+        await asyncio.sleep(1)
+        await client.write_register(555, 0)
+
+        await clb.answer("Звуковая сигнализация сброшена", show_alert=True)
+        if clb.message and not isinstance(clb.message, InaccessibleMessage):
+            await clb.message.delete()
