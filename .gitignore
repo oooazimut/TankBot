@@ -164,3 +164,4 @@ cython_debug/
 test*.py
 media/curr_level.png
 *.db
+*.old

@@ -1,4 +1,5 @@
 from apscheduler.executors.base import logging
+from pymodbus.framer import FramerType
 from config import settings
 from pymodbus.client import AsyncModbusTcpClient, ModbusBaseClient
 from pymodbus.exceptions import ModbusException
@@ -22,6 +23,7 @@ def process_data(client: ModbusBaseClient, data: list):
 async def create_modbus_client():
     return AsyncModbusTcpClient(
         settings.modbus.host,
+        framer=FramerType.RTU,
         port=settings.modbus.port,
         timeout=3,
         retries=1,

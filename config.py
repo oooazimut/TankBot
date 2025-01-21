@@ -1,3 +1,4 @@
+from enum import StrEnum
 from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,6 +15,14 @@ class TankVars(BaseModel):
     critical: int
     pump_on: float
 
+class Alarms(BaseModel):
+    SENSOR_FAILURE: str
+    FIRST_CRIT_LEVEL: str
+    SECOND_CRIT_LEVEL: str
+    CURR_SENSOR_FAILURE: str
+    HIGH_CURRENT_FAILURE: str
+    POSSIBLY_LACK_OF_POWER: str
+    POSSIBLY_DEFECTIVE_PUMP: str
 
 class Settings(BaseSettings):
     bot_token: SecretStr
@@ -21,6 +30,7 @@ class Settings(BaseSettings):
     modbus: ModbusSettings
     passwd: SecretStr
     tank: TankVars
+    alarms: Alarms
 
     @property
     def sqlite_async_dsn(self):

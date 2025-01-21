@@ -1,5 +1,3 @@
-from enum import StrEnum
-
 from aiogram import Bot
 from apscheduler.executors.base import logging
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -14,14 +12,6 @@ logger = logging.getLogger(__name__)
 default_accidents = 0
 
 
-class Messages(StrEnum):
-    SENSOR_FAILURE = "Авария датчика уровня!"
-    FIRST_CRIT_LEVEL = "Первый критический уровень, необходимо проверить работу насоса!"
-    SECOND_CRIT_LEVEL = "Второй критический уровень, ёмкость скоро переполнится!"
-    CURR_SENSOR_FAILURE = "Авария датчика тока!"
-    HIGH_CURRENT_FAILURE = "Превышение рабочего тока!"
-    POSSIBLY_LACK_OF_POWER = "Возможно, насос неисправен или на него не подается питание, превышение уровня воды включения насоса!"
-    POSSIBLY_DEFECTIVE_PUMP = "Неисправен насос или засорение водопровода - уровень жидкости не падает при работе насоса!"
 
 
 def is_warning(level) -> bool:
@@ -48,13 +38,13 @@ async def check_alarm(bot: Bot, db_pool: async_sessionmaker[AsyncSession]):
             return
         match level.level:
             case l if is_failure(l):
-                txt = Messages.SENSOR_FAILURE
+                txt = settings.alarms.SENSOR_FAILURE
             case l if is_warning(l):
-                txt = Messages.FIRST_CRIT_LEVEL
+                txt = settings.alarms.FIRST_CRIT_LEVEL
             case l if is_critical(l):
-                txt = Messages.SECOND_CRIT_LEVEL
+                txt = settings.alarms.SECOND_CRIT_LEVEL
             case l if l >= settings.tank.pump_on:
-                txt = Messages.POSSIBLY_LACK_OF_POWER
+                txt = settings.alarms.POSSIBLY_LACK_OF_POWER
 
         if txt:
             await send_message(txt, session, bot)
@@ -66,13 +56,13 @@ async def check_level(
     txt = ""
     match prev_level, level:
         case p, c if not is_failure(p) and is_failure(c):
-            txt = Messages.SENSOR_FAILURE
+            txt = settings.alarms.SENSOR_FAILURE
         case p, c if not is_warning(p) and is_warning(c):
-            txt = Messages.FIRST_CRIT_LEVEL
+            txt = settings.alarms.FIRST_CRIT_LEVEL
         case p, c if not is_critical(p) and is_critical(c):
-            txt = Messages.SECOND_CRIT_LEVEL
+            txt = settings.alarms.SECOND_CRIT_LEVEL
         case p, c if p < settings.tank.pump_on and c >= settings.tank.pump_on:
-            txt = Messages.POSSIBLY_LACK_OF_POWER
+            txt = settings.alarms.POSSIBLY_LACK_OF_POWER
 
     if txt:
         await send_message(txt, session, bot)
@@ -82,12 +72,12 @@ async def check_accidents(accidents: int, session: AsyncSession, bot: Bot):
     txt = ""
     match accidents:
         case 1:
-            txt = Messages.HIGH_CURRENT_FAILURE
+            txt = settings.alarms.HIGH_CURRENT_FAILURE
         case 2:
-            txt = Messages.POSSIBLY_DEFECTIVE_PUMP
+            txt = settings.alarms.POSSIBLY_DEFECTIVE_PUMP
         case 3:
             txt = (
-                Messages.HIGH_CURRENT_FAILURE + "\n" + Messages.POSSIBLY_DEFECTIVE_PUMP
+                settings.alarms.HIGH_CURRENT_FAILURE + "\n" + settings.alarms.POSSIBLY_DEFECTIVE_PUMP
             )
     await send_message(txt, session, bot)
 
@@ -113,6 +103,6 @@ async def poll_and_save(bot: Bot, db_pool: async_sessionmaker[AsyncSession]):
 
         if rr["accidents"] and rr["accidents"] != default_accidents:
             await check_accidents(rr["accidents"], session, bot)
-            default_accidents = rr["accidents"]
 
+        default_accidents = rr["accidents"]
         await los.new(session, curr_level)

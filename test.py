@@ -1,19 +1,14 @@
-from datetime import date 
-from apscheduler.schedulers.asyncio import asyncio
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from config import settings
-from db.models import Level
+from enum import StrEnum
 
 
-engine = create_async_engine(settings.sqlite_async_dsn, echo=False)
-db_pool = async_sessionmaker(engine, expire_on_commit=False)
+class Alarms(StrEnum):
+    SENSOR_FAILURE = "Авария датчика уровня!"
+    FIRST_CRIT_LEVEL = "Первый критический уровень, необходимо проверить работу насоса!"
+    SECOND_CRIT_LEVEL = "Второй критический уровень, ёмкость скоро переполнится!"
+    CURR_SENSOR_FAILURE = "Авария датчика тока!"
+    HIGH_CURRENT_FAILURE = "Превышение рабочего тока, проверьте насос!"
+    POSSIBLY_LACK_OF_POWER = "Возможно, насос неисправен или на него не подается питание, превышение уровня воды включения насоса!"
+    POSSIBLY_DEFECTIVE_PUMP = "Неисправен насос или засорение водопровода - уровень жидкости не падает при работе насоса!"
 
-async def main():
-    curr_date = date.today()
-    async with db_pool() as session:
-        query = select(Level).where(func.date(Level.timestamp) == curr_date.isoformat())
-        data = await session.scalars(query)
-        print(data.all())
+ALARMS = Alarms
 
-asyncio.run(main())

@@ -89,5 +89,6 @@ class PlotService:
         plt.xlabel("Время")
         plt.ylabel("Уровень")
         plt.yticks([])
+        plt.gca().set_ylim(4, 20)
         plt.legend()
         plt.savefig("media/l_history.png")

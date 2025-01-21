@@ -52,7 +52,7 @@ async def on_date_clicked(
     clicked_date: datetime.date,
     /,
 ):
-    data = await los.get_by_date(manager.middleware_data["sesson"], clicked_date)
+    data = await los.get_by_date(manager.middleware_data["session"], clicked_date)
     if data:
         PlotService.archive_levels(data)
         await manager.switch_to(MainSG.archive)
