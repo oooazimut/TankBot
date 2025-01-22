@@ -15,16 +15,18 @@ class PlotService:
         high_border = settings.tank.high_border + 0.2
 
         def draw_tank(axs: Axes):
-            coordinates = np.array([
-                (1, settings.tank.low_border),
-                (1, high_border),
-                (2, high_border),
-                (2, 21),
-                (5, 21),
-                (5, high_border),
-                (11, high_border),
-                (11, settings.tank.low_border),
-            ])
+            coordinates = np.array(
+                [
+                    (1, settings.tank.low_border),
+                    (1, high_border),
+                    (2, high_border),
+                    (2, 21),
+                    (5, 21),
+                    (5, high_border),
+                    (11, high_border),
+                    (11, settings.tank.low_border),
+                ]
+            )
             tank = Polygon(coordinates, fill=False, closed=True)
             axs.add_patch(tank)
 

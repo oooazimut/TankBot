@@ -17,6 +17,7 @@ async def get_last(session: AsyncSession):
     result = await session.scalar(query)
     return result
 
+
 async def new(session: AsyncSession, level: Level):
     session.add(level)
     await session.commit()

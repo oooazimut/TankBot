@@ -12,8 +12,6 @@ logger = logging.getLogger(__name__)
 default_accidents = 0
 
 
-
-
 def is_warning(level) -> bool:
     return settings.tank.warning < level <= settings.tank.critical
 
@@ -77,7 +75,9 @@ async def check_accidents(accidents: int, session: AsyncSession, bot: Bot):
             txt = settings.alarms.POSSIBLY_DEFECTIVE_PUMP
         case 3:
             txt = (
-                settings.alarms.HIGH_CURRENT_FAILURE + "\n" + settings.alarms.POSSIBLY_DEFECTIVE_PUMP
+                settings.alarms.HIGH_CURRENT_FAILURE
+                + "\n"
+                + settings.alarms.POSSIBLY_DEFECTIVE_PUMP
             )
     await send_message(txt, session, bot)
 

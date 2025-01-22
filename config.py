@@ -1,4 +1,3 @@
-from enum import StrEnum
 from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -15,6 +14,7 @@ class TankVars(BaseModel):
     critical: int
     pump_on: float
 
+
 class Alarms(BaseModel):
     SENSOR_FAILURE: str
     FIRST_CRIT_LEVEL: str
@@ -23,6 +23,7 @@ class Alarms(BaseModel):
     HIGH_CURRENT_FAILURE: str
     POSSIBLY_LACK_OF_POWER: str
     POSSIBLY_DEFECTIVE_PUMP: str
+
 
 class Settings(BaseSettings):
     bot_token: SecretStr

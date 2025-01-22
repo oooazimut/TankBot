@@ -1,8 +1,9 @@
 from apscheduler.executors.base import logging
-from pymodbus.framer import FramerType
-from config import settings
 from pymodbus.client import AsyncModbusTcpClient, ModbusBaseClient
 from pymodbus.exceptions import ModbusException
+from pymodbus.framer import FramerType
+
+from config import settings
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,6 @@ from aiogram_dialog.widgets.kbd.calendar_kbd import (
 from aiogram_dialog.widgets.text import Format, Text
 from babel.dates import get_day_names, get_month_names
 
-
 SELECTED_DAYS_KEY = "selected_dates"
 
 

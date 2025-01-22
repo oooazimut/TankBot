@@ -6,8 +6,8 @@ from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.repo import users as users_repo
 from config import settings
+from db.repo import users as users_repo
 
 logger = logging.getLogger(__name__)
 
