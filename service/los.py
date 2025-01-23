@@ -84,7 +84,7 @@ async def check_accidents(accidents: int, session: AsyncSession, bot: Bot):
 
 async def poll_and_save(bot: Bot, db_pool: async_sessionmaker[AsyncSession]):
     global default_accidents
-    rr = await poll_registers(512, 3)
+    rr = await poll_registers(512, 5)
 
     if not rr:
         logger.error("Не получены данные по модбас!")
@@ -103,6 +103,10 @@ async def poll_and_save(bot: Bot, db_pool: async_sessionmaker[AsyncSession]):
 
         if rr["accidents"] and rr["accidents"] != default_accidents:
             await check_accidents(rr["accidents"], session, bot)
+
+        logger.info(rr['current'])
+        if rr["current"] > 0:
+            logger.info(f"Насос работает, ток равен: {rr['current']}")
 
         default_accidents = rr["accidents"]
         await los.new(session, curr_level)
