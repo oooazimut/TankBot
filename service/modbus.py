@@ -10,13 +10,22 @@ logger = logging.getLogger(__name__)
 
 def process_data(client: ModbusBaseClient, data: list):
     result = dict()
+
     level = data[:2]
     level.reverse()
     result["level"] = client.convert_from_registers(
         level,
         data_type=client.DATATYPE.FLOAT32,
     )
-    result["accidents"] = data[-1]
+
+    result["accidents"] = data[2]
+
+    current = data[3::]
+    current.reverse()
+    result["current"] = client.convert_from_registers(
+        current,
+        data_type=client.DATATYPE.FLOAT32,
+    )
 
     return result
 
