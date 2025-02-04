@@ -1,3 +1,5 @@
+import itertools
+
 from apscheduler.executors.base import logging
 from pymodbus.client import AsyncModbusTcpClient, ModbusBaseClient
 from pymodbus.exceptions import ModbusException
@@ -6,6 +8,10 @@ from pymodbus.framer import FramerType
 from config import settings
 
 logger = logging.getLogger(__name__)
+
+mb_ports = itertools.cycle([settings.modbus.port_l2tp, settings.modbus.port_pptp])
+curr_port = next(mb_ports)
+wrong_connections = 0
 
 
 def process_data(client: ModbusBaseClient, data: list):
@@ -30,11 +36,11 @@ def process_data(client: ModbusBaseClient, data: list):
     return result
 
 
-async def create_modbus_client():
+async def create_modbus_client(port: int):
     return AsyncModbusTcpClient(
         settings.modbus.host,
         framer=FramerType.RTU,
-        port=settings.modbus.port,
+        port=port,
         timeout=3,
         retries=1,
         reconnect_delay=0.5,
@@ -43,10 +49,17 @@ async def create_modbus_client():
 
 
 async def poll_registers(address, count) -> dict | None:
+    global wrong_connections
+    global curr_port
+    if wrong_connections == 5:
+        curr_port = next(mb_ports)
+        logger.error('переключаюсь на другой порт...')
+        wrong_connections = 0
     try:
-        async with await create_modbus_client() as client:
+        async with await create_modbus_client(curr_port) as client:
             if not client.connected:
                 logger.error("Нет соединения с ПР")
+                wrong_connections += 1
                 return
 
             try:

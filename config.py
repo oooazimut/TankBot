@@ -4,7 +4,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ModbusSettings(BaseModel):
     host: str
-    port: int
+    port_pptp: int
+    port_l2tp: int
 
 
 class TankVars(BaseModel):

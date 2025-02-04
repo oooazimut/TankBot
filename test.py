@@ -1,2 +1,7 @@
-l = [1, 2, 3, 4, 5]
-print(l[3::])
+import itertools
+
+a = itertools.cycle([1, 2])
+
+print(next(a))
+print(next(a))
+print(next(a))
